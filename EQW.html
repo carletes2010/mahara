@@ -1,0 +1,133 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>Monitor Sísmico SASNO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+        html, body, #map { height: 100%; margin: 0; font-family: 'Montserrat', sans-serif; }
+        #alertaTexto { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); font-size: 32px; font-weight: bold; color: black; z-index: 1000; opacity: 1; transition: opacity 1s ease; }
+        #info-disclaimer { position: absolute; bottom: 26px; left: 10px; font-size: 14px; background: rgba(255, 255, 255, 0.95); padding: 14px 18px; border-radius: 14px; font-family: 'Montserrat', sans-serif; box-shadow: 0 0 10px rgba(0,0,0,0.2); z-index: 999; border: 2px solid #999; }
+        #signal { display: flex; align-items: center; gap: 10px; }
+        #conectadoLabelId { font-weight: 700; font-size: 15px; color: red; }
+        svg circle { stroke: #660000; stroke-width: 2; fill: #cc0000; fill-opacity: 0.8; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="alertaTexto" style="display: none;"></div>
+    <div id="info-disclaimer">
+        <div id="signal">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32px" height="32px">
+                <circle cx="16" cy="16" r="8"></circle>
+            </svg>
+            <h6 id="conectadoLabelId">Desconectado</h6>
+        </div>
+        <h5>Monitor del SASNO</h5>
+        <p>©2025 SASNO Versión 1.0</p>
+    </div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([19.3, -99.2], 7);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        const estaciones = {
+           40101: { lat: 17.323021, lng: -101.041504 }, 40102: { lat: 17.215833, lng: -100.788889 }, 40103: { lat: 17.159055, lng: -100.639988 }, 40104: { lat: 17.124613, lng: -100.351718 }, 40105: { lat: 17.014444, lng: -100.115556 }, 40106: { lat: 16.885222, lng: -99.943714 }, 40107: { lat: 16.823635, lng: -99.734501 }, 40108: { lat: 16.775182, lng: -99.510629 }, 40109: { lat: 16.761671, lng: -99.228411 }, 40110: { lat: 16.622643, lng: -99.011428 }, 40111: { lat: 16.582027, lng: -98.816899 }, 40112: { lat: 16.635713, lng: -98.561399 }, 40113: { lat: 17.517035, lng: -101.239014 }, 40114: { lat: 17.601485, lng: -101.46492 }, 40115: { lat: 17.741443, lng: -101.633767 }, 40116: { lat: 17.78011, lng: -101.721425 }, 40117: { lat: 17.927129, lng: -101.841202 }, 40118: { lat: 17.982778, lng: -101.925833 }, 40119: { lat: 18.357816, lng: -100.668626 }, 40120: { lat: 18.06414, lng: -100.511332 }, 40121: { lat: 18.368056, lng: -100.176111 }, 40122: { lat: 17.950647, lng: -100.009918 }, 40123: { lat: 18.343333, lng: -99.691389 }, 40124: { lat: 17.932214, lng: -99.60142 }, 40125: { lat: 18.335278, lng: -99.186667 }, 40126: { lat: 17.777425, lng: -98.738779 }, 40127: { lat: 17.831978, lng: -98.982508 }, 40128: { lat: 17.981009, lng: -101.217642 }, 40129: { lat: 17.15, lng: -99.683333 }, 40130: { lat: 17.007648, lng: -99.45782 }, 40131: { lat: 16.96583, lng: -99.093053 }, 40132: { lat: 16.81441, lng: -98.733936 }, 40133: { lat: 16.820316, lng: -98.290558 }, 40134: { lat: 16.31553, lng: -98.423075 }, 40135: { lat: 16.534972, lng: -98.252551 }, 40136: { lat: 16.674722, lng: -98.048056 }, 40137: { lat: 16.302198, lng: -97.912885 }, 40138: { lat: 16.130121, lng: -97.609124 }, 40139: { lat: 16.243826, lng: -97.254356 }, 40140: { lat: 15.982918, lng: -97.08557 }, 40141: { lat: 15.806789, lng: -96.70166 }, 40142: { lat: 15.667814, lng: -96.491426 }, 40143: { lat: 15.775, lng: -96.098056 }, 40144: { lat: 16.028109, lng: -95.668862 }, 40145: { lat: 16.100481, lng: -95.378312 }, 40146: { lat: 16.266037, lng: -95.596546 }, 40147: { lat: 16.39986, lng: -95.764389 }, 40148: { lat: 17.144071, lng: -96.546478 }, 40149: { lat: 16.591554, lng: -97.224429 }, 40150: { lat: 16.515126, lng: -96.980053 }, 40151: { lat: 16.47, lng: -96.703056 }, 40152: { lat: 16.239728, lng: -96.262207 }, 40153: { lat: 17.550432, lng: -97.424616 }, 40154: { lat: 17.37161, lng: -98.184814 }, 40155: { lat: 17.867668, lng: -98.147736 }, 40156: { lat: 17.395119, lng: -97.267039 }, 40157: { lat: 17.565226, lng: -96.547498 }, 40158: { lat: 17.998611, lng: -96.263056 }, 40159: { lat: 18.237245, lng: -96.404571 }, 40160: { lat: 18.19283, lng: -97.681134 }, 40161: { lat: 16.562778, lng: -97.539167 }, 40162: { lat: 17.053831, lng: -96.064796 }, 40163: { lat: 17.34015, lng: -95.37162 }, 40164: { lat: 16.683948, lng: -95.534412 }, 40165: { lat: 16.374424, lng: -95.259633 }, 40166: { lat: 16.713809, lng: -94.910889 }, 40167: { lat: 17.064628, lng: -96.698568 }, 40168: { lat: 17.622502, lng: -98.343209 }, 40169: { lat: 18.045951, lng: -102.182928 }, 40170: { lat: 18.020833, lng: -102.501667 }, 40171: { lat: 18.076643, lng: -102.756012 }, 40172: { lat: 18.198044, lng: -102.995453 }, 40173: { lat: 18.274265, lng: -103.348217 }, 40174: { lat: 18.452453, lng: -103.545759 }, 40175: { lat: 18.611512, lng: -103.672442 }, 40176: { lat: 18.362499, lng: -101.9861 }, 40177: { lat: 18.539513, lng: -101.35025 }, 40178: { lat: 18.784605, lng: -103.691368 }, 40179: { lat: 18.956586, lng: -103.950656 }, 40180: { lat: 19.042868, lng: -104.259836 }, 40181: { lat: 19.126356, lng: -104.444275 }, 40182: { lat: 19.188703, lng: -104.680556 }, 40183: { lat: 19.353704, lng: -104.898491 }, 40184: { lat: 19.576288, lng: -105.085559 }, 40185: { lat: 19.67605, lng: -105.18405 }, 40186: { lat: 19.870058, lng: -105.306704 }, 40187: { lat: 20.034004, lng: -105.476993 }, 40188: { lat: 20.307279, lng: -105.487979 }, 40189: { lat: 18.236944, lng: -98.706944 }, 40190: { lat: 18.33127, lng: -98.27739 }, 40191: { lat: 18.579223, lng: -97.92732 }, 40192: { lat: 18.681626, lng: -97.648318 }, 40193: { lat: 18.466506, lng: -97.40038 }
+        };
+
+        let circulosFijos = [];
+        let circulosAnimados = [];
+        let sismoActivo = false;
+        let estacionesMarkers = [];
+        let estacionesRojas = 0;
+
+        // Crear un marcador para la central
+        const centralMarker = L.circleMarker([19.3, -99.2], { radius: 12, color: 'blue' }).addTo(map);
+
+        function mostrarAlertaTexto(texto) {
+            const alerta = document.getElementById('alertaTexto');
+            alerta.innerText = texto;
+            alerta.style.display = 'block';
+            alerta.style.opacity = 1;
+            setTimeout(() => {
+                alerta.style.opacity = 0;
+                setTimeout(() => { alerta.style.display = 'none'; }, 1000);
+            }, 7000);
+        }
+
+        function mostrarEvento(lat, lng) {
+            if (sismoActivo) return;
+            sismoActivo = true;
+            limpiarEvento();
+            const epicentro = L.latLng(lat, lng);
+            [200000, 150000, 100000, 50000].forEach(r => {
+                const c = L.circle(epicentro, { radius: r, color: '#666', fill: false, weight: 1 }).addTo(map);
+                circulosFijos.push(c);
+            });
+            crearCirculoAnimado(epicentro, '#800080', 6.5, 15); // Onda P
+            crearCirculoAnimado(epicentro, '#e5be01', 3.5, 15); // Onda S
+            mostrarAlertaTexto('¡Sismo en Progreso!');
+            new Audio('https://sasmex.net/mapa/audio/VikingsHorn2.wav').play(); // Sonido al iniciar las ondas
+        }
+
+        function crearCirculoAnimado(center, color, velocidad, retraso) {
+            const circulo = L.circle(center, { radius: velocidad * 1000 * retraso, color, weight: 2, fill: false }).addTo(map);
+            circulosAnimados.push(circulo);
+            const t0 = performance.now() - retraso * 1000;
+            const duracion = 130000;
+
+            function animar(t) {
+                const dt = t - t0;
+                if (dt >= duracion) { map.removeLayer(circulo); return; }
+                circulo.setRadius(velocidad * 1000 * dt / 1000);
+
+                // Verificar si la onda amarilla está cerca de alguna estación
+                estacionesMarkers.forEach(marker => {
+                    const distancia = circulo.getLatLng().distanceTo(marker.getLatLng());
+                    if (distancia <= circulo.getRadius() && color === '#e5be01') { // Solo para la onda amarilla
+                        marker.setStyle({ color: 'red' });
+                        estacionesRojas++;
+                        if (estacionesRojas === 2) {
+                            centralMarker.setStyle({ color: 'blue' }); // Cambiar a azul cuando 2 estaciones tocan la onda amarilla
+                        }
+                        if (estacionesRojas >= 3) {
+                            centralMarker.setStyle({ color: 'yellow' }); // Cambiar a amarillo si 3 estaciones tocan la onda amarilla
+                        }
+                        new Audio('https://sasmex.net/mapa/audio/PingSismo.wav').play(); // Sonido cuando los sensores se tocan
+                    } else {
+                        marker.setStyle({ color: 'blue' }); // Cambiar a azul si no está en rojo
+                    }
+                });
+
+                requestAnimationFrame(animar);
+            }
+            requestAnimationFrame(animar);
+        }
+
+        function limpiarEvento() {
+            circulosFijos.forEach(c => map.removeLayer(c));
+            circulosFijos = [];
+            circulosAnimados.forEach(c => map.removeLayer(c));
+            circulosAnimados = [];
+            sismoActivo = false;
+            estacionesRojas = 0; // Reiniciar contador de estaciones rojas
+            centralMarker.setStyle({ color: 'blue' }); // Reiniciar color de la central
+        }
+
+        // Mostrar estaciones en el mapa
+        Object.entries(estaciones).forEach(([id, { lat, lng }]) => {
+            const marker = L.circleMarker([lat, lng], { radius: 8, color: 'blue' }).addTo(map);
+            estacionesMarkers.push(marker);
+        });
+
+        map.on("click", e => mostrarEvento(e.latlng.lat, e.latlng.lng));
+    </script>
+</body>
+</html>
